@@ -547,10 +547,10 @@ C These are applied in cells where there is no plume. The idea is that in these 
 C The thermodynamics in this section are taken from pkg/icefront
 C Tendencies are applied in S/R EXTERNAL_FORCING
 
-C To convert from melt rate (m d^-1) to freshwater flux (kg m^-2 d^-1)
+C To convert from melt rate (m d^-1) to freshwater flux (kg m^-2 s^-1): mProf (m/d) * rho_shelfice_ref (mg/m^3) / 86400 (s/d) = mProf/94.22
               FwFlux(k) = -mProf(k)/94.22
 
-C Heat required to melt that much ice (W m^-2)
+C Heat required to melt that much ice (W m^-2): FwFlux / latent heat of fusion (333.55E+3)
               heatflux(k) = -FwFlux(k)*333.55E+3
 
 C Create local (no overlap) arrays of heat and freshwater flux from background
