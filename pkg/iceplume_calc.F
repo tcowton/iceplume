@@ -210,9 +210,16 @@ C           Velocities
 
 C Vertical extent of domain
            maxDepth = rF(Nr+1)
-C Depth of seabed at glacer front
-           iceDepth = R_low(I,J,bi,bj)
 
+C Grounding line is in cell above deepest cell
+C to avoid interpolation issues in plume model
+
+	   DO K = 1,Nr+1
+        IF ( rF(K) .LE. R_low(I,J,bi,bj) ) THEN
+         iceDepth = rF(k-1)
+         EXIT
+        ENDIF
+       ENDDO
 
       IF ( iceDepth .EQ. 0 ) THEN
                 WRITE(msgBuf,'(2A)')
