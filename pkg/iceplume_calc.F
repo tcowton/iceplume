@@ -214,7 +214,7 @@ C Vertical extent of domain
 C Grounding line is in cell above deepest cell
 C to avoid interpolation issues in plume model
 
-	   DO K = 1,Nr+1
+       DO K = 1,Nr+1
         IF ( rF(K) .LE. R_low(I,J,bi,bj) ) THEN
          iceDepth = rF(k-1)
          EXIT
