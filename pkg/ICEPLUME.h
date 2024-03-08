@@ -24,7 +24,8 @@ C Header file pkg/ICEPLUME
      &      useConePlume,
      &      useDetachPlume,
      &      conserveMass,
-     &      useInputPtracers
+     &      useInputPtracers,
+     &      useIcebergs
       LOGICAL usePlumeDiagnostics
       LOGICAL dispersePlumeOutput
       LOGICAL useSheetPlume
@@ -32,6 +33,7 @@ C Header file pkg/ICEPLUME
       LOGICAL useDetachPlume
       LOGICAL conserveMass
       LOGICAL useInputPtracers
+      LOGICAL useIcebergs
 
       COMMON /ICEPLUME_FIELDS/
      &     runoffVel, runoffVel0, runoffVel1,
@@ -46,6 +48,7 @@ C Header file pkg/ICEPLUME
      &     mProfPlume3DLocal, mProfAv3DLocal,
      &     temp_addMass3D, salt_addMass3D,
      &     volFluxDiff3D,
+     &     icebergArea3D,
      &     Qin
       _RL runoffVel  (1-Olx:sNx+Olx,1-Oly:sNy+Oly,nSx,nSy)
       _RL runoffVel0 (1-Olx:sNx+Olx,1-Oly:sNy+Oly,nSx,nSy)
@@ -65,6 +68,7 @@ C Header file pkg/ICEPLUME
       _RL temp_addMass3D  (1-OLx:sNx+OLx,1-Oly:sNy+Oly,Nr,nSx,nSy)
       _RL salt_addMass3D  (1-OLx:sNx+OLx,1-Oly:sNy+Oly,Nr,nSx,nSy)
       _RL volFluxDiff3D   (1-OLx:sNx+OLx,1-Oly:sNy+Oly,Nr,nSx,nSy)
+      _RL icebergArea3D   (1-OLx:sNx+OLx,1-Oly:sNy+Oly,Nr,nSx,nSy)
       _RS rProfPlume3DLocal    (sNx,sNy,Nr)
       _RS wProfPlume3DLocal    (sNx,sNy,Nr)
       _RS tProfPlume3DLocal    (sNx,sNy,Nr)
@@ -171,12 +175,14 @@ C Header file pkg/ICEPLUME
       COMMON /ICEPLUME_FILES/
      &	    runoffVelfile,
      &	    runoffRadfile,
-     &      plumeMaskFile
+     &      plumeMaskFile,
+     &      icebergAreaFile
 C Again, doesn't like MAX_LEN_FNAM
       CHARACTER*(512)
      &	    runoffVelfile,
      &	    runoffRadfile,
-     &      plumeMaskFile
+     &      plumeMaskFile,
+     &      icebergAreaFile
 
 C-----------------------------------------
 C Parameters relating to the icefront package

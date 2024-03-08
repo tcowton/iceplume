@@ -46,6 +46,10 @@ C     I,J,K,bi,bj - Loop counters
 
 #endif /* ALLOW_PTRACERS */
 
+           DO K = 1,Nr
+            icebergArea3D (I,J,K,bi,bj) = 0.D0
+           ENDDO
+
          ENDDO
         ENDDO
        ENDDO
@@ -55,6 +59,12 @@ C      Read plume mask data
        IF ( plumeMaskFile .NE. ' ' ) THEN
         CALL READ_REC_XY_RS
      &     (plumeMaskFile,plumeMask,iRec0,myIter,myThid)
+       ENDIF
+
+C      Read iceberg area file
+       IF ( icebergAreaFile .NE. ' ' ) THEN
+        CALL READ_REC_XYZ_RL
+     &     (icebergAreaFile,icebergArea3D,iRec0,myIter,myThid)
        ENDIF
 
 C Load runoff
