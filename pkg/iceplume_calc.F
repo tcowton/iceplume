@@ -154,7 +154,10 @@ C plume.
                 CALL PRINT_ERROR( msgBuf, myThid )
                 STOP 'ABNORMAL END: S/R ICEPLUME_CALC'
 #endif
-
+            ELSEIF ( plumeMask(I,J,bi,bj) .EQ. 99 ) THEN
+                useSheetPlume = .FALSE.
+                useConePlume = .FALSE.
+                useDetachPlume = .FALSE.
             ELSE
 
                 WRITE(msgBuf,'(2A)')
@@ -475,15 +478,44 @@ C orientation of ice front
 
             IF ( plumeMask(I,J,bi,bj) .LT. 0 ) THEN
 C Negative mask values indicate north-south ice front orientation
+
             meanVel = ((wVelCell**2.)+(uVelCell**2.))**0.5
-            ELSEIF ( plumeMask(I,J,bi,bj) .GT. 0 ) THEN
-C Positive mask values indicate east-west ice front orientation
-            meanVel = ((wVelCell**2.)+(vVelCell**2.))**0.5
-            ENDIF
 
             CALL ICEPLUME_MELTRATE(
      I            tProf(k),sProf(k),meanVel,rC(k),
      O            mProf(k) )
+
+            ELSEIF (( plumeMask(I,J,bi,bj) .GT. 0 ) .AND.
+     &             ( plumeMask(I,J,bi,bj) .LT. 99 )) THEN
+C Positive mask values indicate east-west ice front orientation
+
+            meanVel = ((wVelCell**2.)+(vVelCell**2.))**0.5
+
+            CALL ICEPLUME_MELTRATE(
+     I            tProf(k),sProf(k),meanVel,rC(k),
+     O            mProf(k) )
+
+C For icebergs, use mean of u and v velocities
+            ELSEIF (( plumeMask(I,J,bi,bj) .EQ. 99 ) .AND.
+     &      (icebergArea3D(I,J,K,bi,bj) .GT. 0 )) THEN
+
+            IF ( useIcebergs ) THEN
+
+            meanVel = ((((wVelCell**2.)+(uVelCell**2.))**0.5) +
+     &             (((wVelCell**2.)+(vVelCell**2.))**0.5)) / 2
+
+            CALL ICEPLUME_MELTRATE(
+     I            tProf(k),sProf(k),meanVel,rC(k),
+     O            mProf(k) )
+
+            ENDIF
+
+            ELSE
+C No melt in cell
+
+            mProf(k) = 0.D0
+
+            ENDIF
 
 C Get average melt rate. This is useful for visualling melt patterns and 
 C assessing overall melt rate of glacier.
@@ -547,13 +579,13 @@ C Send outputs to 3D grid for diagnostics
              mProfPlume3D(I,J,K,bi,bj) = mProfPlume(k)
              mProfAv3D(I,J,K,bi,bj) = mProfAv(k)
             ENDIF
-
+ 
 
 C ------------Tendencies------------------------------
 C These are applied in cells where there is no plume. The idea is that in these areas there are likely to be local subgrid convection cells. As such, it is most realistic to apply changes in T and S to ice edge cell. Where there is a plume, products of melt are transported upwards so no local changes applied.
 C The thermodynamics in this section are taken from pkg/icefront
 C Tendencies are applied in S/R EXTERNAL_FORCING
-
+           
 C To convert from melt rate (m d^-1) to freshwater flux (kg m^-2 s^-1): mProf (m/d) * rho_shelfice_ref (mg/m^3) / 86400 (s/d) = mProf/94.22
               FwFlux(k) = -mProf(k)/94.22
 
@@ -577,16 +609,44 @@ C     Compute tendencies (as for pkg/icefront)
      &                FWFlux3D(I,J,K,bi,bj)*
      &                mass2rUnit * sProf(k)
 
-C     Scale by icefrontlength, which is the ratio of the horizontal length
-C     of the ice front in each model grid cell divided by the grid cell area.
-C     (icefrontlength = dy / dxdy = 1 / dx)
- 
-             icefront_TendT(I,j,K,bi,bj) = 
-     &            icefront_TendT(I,j,K,bi,bj)
-     &            * 1./delta_x
-             icefront_TendS(I,j,K,bi,bj) = 
-     &            icefront_TendS(I,j,K,bi,bj)
-     &            * 1./delta_x
+C scale by the area of ice in the cell divided by the volume of the cell
+
+            IF (( plumeMask(I,J,bi,bj) .LE. 0 ) .AND.
+     &             ( plumeMask(I,J,bi,bj) .NE. 99 )) THEN
+
+              icefront_TendT(I,J,K,bi,bj) = icefront_TendT(I,J,K,bi,bj) 
+     &           * ((dyG(I,J,bi,bj) * abs(drF(K)))
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))))
+              icefront_TendS(I,j,K,bi,bj) = icefront_TendS(I,j,K,bi,bj) 
+     &           * ((dyG(I,J,bi,bj) * abs(drF(K)))
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))))
+
+            ELSEIF (( plumeMask(I,J,bi,bj) .GE. 0 ) .AND.
+     &             ( plumeMask(I,J,bi,bj) .NE. 99 )) THEN
+
+              icefront_TendT(I,J,K,bi,bj) = icefront_TendT(I,J,K,bi,bj) 
+     &           * ((dxG(I,J,bi,bj) * abs(drF(K)))
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))))
+              icefront_TendS(I,j,K,bi,bj) = icefront_TendS(I,j,K,bi,bj) 
+     &           * ((dxG(I,J,bi,bj) * abs(drF(K)))
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))))
+
+            ELSEIF ( plumeMask(I,J,bi,bj) .EQ. 99 ) THEN
+
+              IF ( useIcebergs ) THEN
+C 
+C     For icebergs, scale by the area of ice in the cell divided by the volume of the cell
+              icefront_TendT(I,J,K,bi,bj) = icefront_TendT(I,J,K,bi,bj) 
+     &           * ( icebergArea3D(I,J,K,bi,bj)
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))) )
+              icefront_TendS(I,j,K,bi,bj) = icefront_TendS(I,j,K,bi,bj) 
+     &           * ( icebergArea3D(I,J,K,bi,bj)
+     &           / (dxG(I,J,bi,bj) * dyG(I,J,bi,bj) * abs(drF(K))) )
+
+             ENDIF
+
+            ENDIF
+
            ENDDO
 
 
@@ -633,10 +693,10 @@ C Convert m3/s into kg/s
          ENDIF ! plumeMask .NE. 0
 
 C DO J loop
-	 ENDDO
+	    ENDDO
 
 C DO I loop
-         ENDDO
+        ENDDO
 
 C-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 

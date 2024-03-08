@@ -54,7 +54,10 @@ C    PARMO1 - ICEPLUME inputs
      &     useSheetPlume,
      &     useConePlume,
      &     maxDepth,
-     &     backgroundVel
+     &     backgroundVel,
+     &     icebergAreaFile,
+     &     useIcebergs
+
 
 C    PARMO2 - icefront inputs required for thermodynamics
       NAMELIST /ICEPLUME_PARM02/
@@ -99,6 +102,7 @@ C     Default values for PARM01
       GamS   = 0.00062
       Cd     = 0.0025
       backgroundVel = 0.001
+      useIcebergs = .FALSE.
 
 C Default values for PARMO2
        ICEFRONTlatentHeat       =  334.0 _d 3
